@@ -784,11 +784,15 @@ esp_err_t llm_chat_tools(const char *system_prompt,
 
 esp_err_t llm_set_api_key(const char *api_key)
 {
+    if (!api_key) return ESP_ERR_INVALID_ARG;
+
     nvs_handle_t nvs;
-    ESP_ERROR_CHECK(nvs_open(MIMI_NVS_LLM, NVS_READWRITE, &nvs));
-    ESP_ERROR_CHECK(nvs_set_str(nvs, MIMI_NVS_KEY_API_KEY, api_key));
-    ESP_ERROR_CHECK(nvs_commit(nvs));
+    esp_err_t err = nvs_open(MIMI_NVS_LLM, NVS_READWRITE, &nvs);
+    if (err != ESP_OK) return err;
+    err = nvs_set_str(nvs, MIMI_NVS_KEY_API_KEY, api_key);
+    if (err == ESP_OK) err = nvs_commit(nvs);
     nvs_close(nvs);
+    if (err != ESP_OK) return err;
 
     safe_copy(s_api_key, sizeof(s_api_key), api_key);
     ESP_LOGI(TAG, "API key saved");
@@ -797,11 +801,15 @@ esp_err_t llm_set_api_key(const char *api_key)
 
 esp_err_t llm_set_model(const char *model)
 {
+    if (!model) return ESP_ERR_INVALID_ARG;
+
     nvs_handle_t nvs;
-    ESP_ERROR_CHECK(nvs_open(MIMI_NVS_LLM, NVS_READWRITE, &nvs));
-    ESP_ERROR_CHECK(nvs_set_str(nvs, MIMI_NVS_KEY_MODEL, model));
-    ESP_ERROR_CHECK(nvs_commit(nvs));
+    esp_err_t err = nvs_open(MIMI_NVS_LLM, NVS_READWRITE, &nvs);
+    if (err != ESP_OK) return err;
+    err = nvs_set_str(nvs, MIMI_NVS_KEY_MODEL, model);
+    if (err == ESP_OK) err = nvs_commit(nvs);
     nvs_close(nvs);
+    if (err != ESP_OK) return err;
 
     safe_copy(s_model, sizeof(s_model), model);
     ESP_LOGI(TAG, "Model set to: %s", s_model);

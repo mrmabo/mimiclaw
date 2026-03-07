@@ -130,7 +130,11 @@ static int cmd_set_api_key(int argc, char **argv)
         arg_print_errors(stderr, api_key_args.end, argv[0]);
         return 1;
     }
-    llm_set_api_key(api_key_args.key->sval[0]);
+    esp_err_t err = llm_set_api_key(api_key_args.key->sval[0]);
+    if (err != ESP_OK) {
+        printf("Error: failed to save API key (0x%x)\n", err);
+        return 1;
+    }
     printf("API key saved.\n");
     return 0;
 }
@@ -148,7 +152,11 @@ static int cmd_set_model(int argc, char **argv)
         arg_print_errors(stderr, model_args.end, argv[0]);
         return 1;
     }
-    llm_set_model(model_args.model->sval[0]);
+    esp_err_t err = llm_set_model(model_args.model->sval[0]);
+    if (err != ESP_OK) {
+        printf("Error: failed to save model (0x%x)\n", err);
+        return 1;
+    }
     printf("Model set.\n");
     return 0;
 }
