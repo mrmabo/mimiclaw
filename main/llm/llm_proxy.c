@@ -238,7 +238,11 @@ esp_err_t llm_proxy_init(void)
         char provider_tmp[16] = {0};
         len = sizeof(provider_tmp);
         if (nvs_get_str(nvs, MIMI_NVS_KEY_PROVIDER, provider_tmp, &len) == ESP_OK && provider_tmp[0]) {
-            safe_copy(s_provider, sizeof(s_provider), provider_tmp);
+            if (strcmp(provider_tmp, "anthropic") == 0 || strcmp(provider_tmp, "openai") == 0 || strcmp(provider_tmp, "deepseek") == 0) {
+                safe_copy(s_provider, sizeof(s_provider), provider_tmp);
+            } else {
+                ESP_LOGW(TAG, "Invalid NVS provider '%s', keeping: %s", provider_tmp, s_provider);
+            }
         }
         nvs_close(nvs);
     }
@@ -564,7 +568,9 @@ esp_err_t llm_chat_tools(const char *system_prompt,
     /* Build request body (non-streaming) */
     cJSON *body = cJSON_CreateObject();
     cJSON_AddStringToObject(body, "model", s_model);
-    if (provider_is_openai()) {
+    if (strcmp(s_provider, "deepseek") == 0) {
+        cJSON_AddNumberToObject(body, "max_tokens", MIMI_LLM_MAX_TOKENS);
+    } else if (strcmp(s_provider, "openai") == 0) {
         cJSON_AddNumberToObject(body, "max_completion_tokens", MIMI_LLM_MAX_TOKENS);
     } else {
         cJSON_AddNumberToObject(body, "max_tokens", MIMI_LLM_MAX_TOKENS);
@@ -804,11 +810,19 @@ esp_err_t llm_set_model(const char *model)
 
 esp_err_t llm_set_provider(const char *provider)
 {
+    if (!provider) return ESP_ERR_INVALID_ARG;
+    if (strcmp(provider, "anthropic") != 0 && strcmp(provider, "openai") != 0 && strcmp(provider, "deepseek") != 0) {
+        ESP_LOGE(TAG, "Invalid provider '%s'. Use: anthropic|openai|deepseek", provider);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     nvs_handle_t nvs;
-    ESP_ERROR_CHECK(nvs_open(MIMI_NVS_LLM, NVS_READWRITE, &nvs));
-    ESP_ERROR_CHECK(nvs_set_str(nvs, MIMI_NVS_KEY_PROVIDER, provider));
-    ESP_ERROR_CHECK(nvs_commit(nvs));
+    esp_err_t err = nvs_open(MIMI_NVS_LLM, NVS_READWRITE, &nvs);
+    if (err != ESP_OK) return err;
+    err = nvs_set_str(nvs, MIMI_NVS_KEY_PROVIDER, provider);
+    if (err == ESP_OK) err = nvs_commit(nvs);
     nvs_close(nvs);
+    if (err != ESP_OK) return err;
 
     safe_copy(s_provider, sizeof(s_provider), provider);
     ESP_LOGI(TAG, "Provider set to: %s", s_provider);
