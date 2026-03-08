@@ -51,7 +51,8 @@ static bool pin_is_allowed_impl(int pin,
                                 const char *allowlist_csv,
                                 int min_pin,
                                 int max_pin,
-                                bool block_esp32_flash_pins)
+                                bool block_esp32_flash_pins,
+                                bool block_esp32s3_usb_pins)
 {
     bool in_policy;
 
@@ -61,6 +62,11 @@ static bool pin_is_allowed_impl(int pin,
 
     /* Block ESP32 flash/PSRAM pins (GPIO 6-11) */
     if (block_esp32_flash_pins && pin >= 6 && pin <= 11) {
+        return false;
+    }
+
+    /* USB Serial/JTAG uses GPIO19/20 on ESP32-S3 */
+    if (block_esp32s3_usb_pins && (pin == 19 || pin == 20)) {
         return false;
     }
 
@@ -81,10 +87,13 @@ bool gpio_policy_pin_is_allowed(int pin)
 {
 #if defined(CONFIG_IDF_TARGET_ESP32)
     return pin_is_allowed_impl(pin, MIMI_GPIO_ALLOWED_CSV,
-                               MIMI_GPIO_MIN_PIN, MIMI_GPIO_MAX_PIN, true);
+                               MIMI_GPIO_MIN_PIN, MIMI_GPIO_MAX_PIN, true, false);
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+    return pin_is_allowed_impl(pin, MIMI_GPIO_ALLOWED_CSV,
+                               MIMI_GPIO_MIN_PIN, MIMI_GPIO_MAX_PIN, false, true);
 #else
     return pin_is_allowed_impl(pin, MIMI_GPIO_ALLOWED_CSV,
-                               MIMI_GPIO_MIN_PIN, MIMI_GPIO_MAX_PIN, false);
+                               MIMI_GPIO_MIN_PIN, MIMI_GPIO_MAX_PIN, false, false);
 #endif
 }
 
@@ -94,6 +103,13 @@ bool gpio_policy_pin_forbidden_hint(int pin, char *result, size_t result_len)
     if (pin >= 6 && pin <= 11) {
         snprintf(result, result_len,
                  "Error: pin %d is reserved for ESP32 flash/PSRAM (GPIO6-11); choose a different pin",
+                 pin);
+        return true;
+    }
+#elif defined(CONFIG_IDF_TARGET_ESP32S3)
+    if (pin == 19 || pin == 20) {
+        snprintf(result, result_len,
+                 "Error: pin %d is reserved for ESP32-S3 USB Serial/JTAG (GPIO19/20); choose a different pin",
                  pin);
         return true;
     }
