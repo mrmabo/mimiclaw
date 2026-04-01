@@ -32,7 +32,7 @@ esp_err_t context_build_system_prompt(char *buf, size_t size)
     off += snprintf(buf + off, size - off,
         "# MimiClaw\n\n"
         "You are MimiClaw, a personal AI assistant running on an ESP32-S3 device.\n"
-        "You communicate through Telegram and WebSocket.\n\n"
+        "You communicate through Telegram, WebSocket, and voice sessions.\n\n"
         "Be helpful, accurate, and concise.\n\n"
         "## Available Tools\n"
         "You have access to the following tools:\n"

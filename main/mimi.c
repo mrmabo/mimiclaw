@@ -26,6 +26,7 @@
 #include "heartbeat/heartbeat.h"
 #include "skills/skill_loader.h"
 #include "onboard/wifi_onboard.h"
+#include "app/app_voice_main.h"
 
 static const char *TAG = "mimi";
 
@@ -92,6 +93,8 @@ static void outbound_dispatch_task(void *arg)
             if (ws_err != ESP_OK) {
                 ESP_LOGW(TAG, "WS send failed for %s: %s", msg.chat_id, esp_err_to_name(ws_err));
             }
+        } else if (strcmp(msg.channel, MIMI_CHAN_VOICE) == 0) {
+            app_voice_main_handle_agent_response(&msg);
         } else if (strcmp(msg.channel, MIMI_CHAN_SYSTEM) == 0) {
             ESP_LOGI(TAG, "System message [%s]: %.128s", msg.chat_id, msg.content);
         } else {
@@ -182,6 +185,18 @@ void app_main(void)
         cron_service_start();
         heartbeat_start();
         ESP_ERROR_CHECK(ws_server_start());
+
+        if (MIMI_VOICE_ENABLE_RUNTIME) {
+            esp_err_t voice_err = app_voice_main_init();
+            if (voice_err != ESP_OK) {
+                ESP_LOGW(TAG, "Voice runtime init skipped: %s", esp_err_to_name(voice_err));
+            } else {
+                voice_err = app_voice_main_start();
+                if (voice_err != ESP_OK) {
+                    ESP_LOGW(TAG, "Voice runtime start skipped: %s", esp_err_to_name(voice_err));
+                }
+            }
+        }
 
         ESP_LOGI(TAG, "All services started!");
     }

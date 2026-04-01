@@ -8,6 +8,15 @@ static const char *TAG = "bus";
 static QueueHandle_t s_inbound_queue;
 static QueueHandle_t s_outbound_queue;
 
+void message_bus_init_msg(mimi_msg_t *msg)
+{
+    if (!msg) {
+        return;
+    }
+    memset(msg, 0, sizeof(*msg));
+    msg->msg_type = MIMI_MSG_TYPE_TEXT;
+}
+
 esp_err_t message_bus_init(void)
 {
     s_inbound_queue = xQueueCreate(MIMI_BUS_QUEUE_LEN, sizeof(mimi_msg_t));

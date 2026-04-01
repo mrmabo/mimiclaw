@@ -46,6 +46,9 @@
 #ifndef MIMI_SECRET_TAVILY_KEY
 #define MIMI_SECRET_TAVILY_KEY      ""
 #endif
+#ifndef MIMI_SECRET_VOICE_GATEWAY_URL
+#define MIMI_SECRET_VOICE_GATEWAY_URL ""
+#endif
 
 /* WiFi */
 #define MIMI_WIFI_MAX_RETRY          10
@@ -128,6 +131,62 @@
 #define MIMI_WS_PORT                 18789
 #define MIMI_WS_MAX_CLIENTS          4
 
+/* Voice / Audio Runtime */
+#define MIMI_VOICE_ENABLE_RUNTIME            1
+#define MIMI_VOICE_ENABLE_WAKEWORD           1
+#define MIMI_VOICE_GATEWAY_URL               MIMI_SECRET_VOICE_GATEWAY_URL
+#define MIMI_VOICE_GATEWAY_TASK_STACK        (8 * 1024)
+#define MIMI_VOICE_GATEWAY_BUFFER_SIZE       4096
+#define MIMI_VOICE_SESSION_ID_PREFIX         "voice"
+#define MIMI_VOICE_DEFAULT_LANGUAGE          "zh-CN"
+#define MIMI_VOICE_START_UPLOAD_AFTER_ACK    1
+#define MIMI_VOICE_AUDIO_INPUT_FORMAT        "pcm_s16le"
+#define MIMI_VOICE_AUDIO_OUTPUT_FORMAT       "pcm_s16le"
+#define MIMI_VOICE_FRAME_DURATION_MS         60
+#define MIMI_VOICE_LOG_VERBOSE_PROTOCOL      0
+#define MIMI_VOICE_GATEWAY_TIMEOUT_MS        (30 * 1000)
+#define MIMI_VOICE_ROUTE_COUNT_MAX           4
+
+/* Audio HAL */
+#define MIMI_AUDIO_SAMPLE_RATE_HZ            16000
+#define MIMI_AUDIO_CHANNELS                  1
+#define MIMI_AUDIO_BITS_PER_SAMPLE           16
+#define MIMI_AUDIO_FRAME_SAMPLES            ((MIMI_AUDIO_SAMPLE_RATE_HZ * MIMI_VOICE_FRAME_DURATION_MS) / 1000)
+#define MIMI_AUDIO_FRAME_BYTES              (MIMI_AUDIO_FRAME_SAMPLES * sizeof(int16_t))
+#define MIMI_AUDIO_IO_TIMEOUT_MS             100
+#define MIMI_AUDIO_MIC_TASK_STACK            (4 * 1024)
+#define MIMI_AUDIO_MIC_TASK_PRIO             8
+#define MIMI_AUDIO_MIC_MAX_CONSUMERS         4
+#define MIMI_AUDIO_PLAYBACK_QUEUE_LEN        8
+#define MIMI_AUDIO_PLAYBACK_CHUNK_BYTES      4096
+
+/* Board-specific I2S pins. Set these to your ESP32-S3 board wiring before flashing. */
+#define MIMI_AUDIO_MIC_BCLK_PIN             -1
+#define MIMI_AUDIO_MIC_WS_PIN               -1
+#define MIMI_AUDIO_MIC_DIN_PIN              -1
+#define MIMI_AUDIO_MIC_MCLK_PIN             -1
+#define MIMI_AUDIO_SPK_BCLK_PIN             -1
+#define MIMI_AUDIO_SPK_WS_PIN               -1
+#define MIMI_AUDIO_SPK_DOUT_PIN             -1
+#define MIMI_AUDIO_SPK_MCLK_PIN             -1
+
+/* Wake word routing defaults.
+ * TODO: Replace indexes/model names once the exact ESP-SR model bundle is selected for this board.
+ */
+#define MIMI_WAKEWORD_MODEL_PARTITION_LABEL  "model"
+#define MIMI_WAKEWORD_PRIMARY_MODEL_HINT     "xiaozhi_zh"
+#define MIMI_WAKEWORD_SECONDARY_MODEL_HINT   "xiaozhi_en"
+#define MIMI_WAKEWORD_ZH_LABEL               "你好小智"
+#define MIMI_WAKEWORD_ZH_LANGUAGE            "zh-CN"
+#define MIMI_WAKEWORD_ZH_MODEL_INDEX         1
+#define MIMI_WAKEWORD_ZH_WORD_INDEX          1
+#define MIMI_WAKEWORD_ZH_AVAILABLE           1
+#define MIMI_WAKEWORD_EN_LABEL               "Hey Xiaozhi"
+#define MIMI_WAKEWORD_EN_LANGUAGE            "en-US"
+#define MIMI_WAKEWORD_EN_MODEL_INDEX         2
+#define MIMI_WAKEWORD_EN_WORD_INDEX          1
+#define MIMI_WAKEWORD_EN_AVAILABLE           0
+
 /* Serial CLI */
 #define MIMI_CLI_STACK               (4 * 1024)
 #define MIMI_CLI_PRIO                3
@@ -140,6 +199,7 @@
 #define MIMI_NVS_LLM                 "llm_config"
 #define MIMI_NVS_PROXY               "proxy_config"
 #define MIMI_NVS_SEARCH              "search_config"
+#define MIMI_NVS_VOICE               "voice_config"
 
 /* NVS Keys */
 #define MIMI_NVS_KEY_SSID            "ssid"
@@ -154,6 +214,7 @@
 #define MIMI_NVS_KEY_PROXY_HOST      "host"
 #define MIMI_NVS_KEY_PROXY_PORT      "port"
 #define MIMI_NVS_KEY_PROXY_TYPE      "proxy_type"
+#define MIMI_NVS_KEY_GATEWAY_URL     "gateway_url"
 
 /* WiFi Onboarding (Captive Portal) */
 #define MIMI_ONBOARD_AP_PREFIX    "MimiClaw-"

@@ -8,9 +8,22 @@ idf_component_register(
         "llm/llm_proxy.c"
         "agent/agent_loop.c"
         "agent/context_builder.c"
+        "audio/audio_hal.c"
+        "assets/ack_im_here.c"
+        "assets/ack_wozai.c"
+        "app/app_voice_main.c"
+        "bridge/agent_bridge.c"
         "memory/memory_store.c"
         "memory/session_mgr.c"
         "gateway/ws_server.c"
+        "voice/capture_controller.c"
+        "voice/playback_controller.c"
+        "voice/voice_protocol.c"
+        "voice/voice_session.c"
+        "voice/voice_state_machine.c"
+        "voice/voice_ws_client.c"
+        "wakeword/wakeword_router.c"
+        "wakeword/wakeword_service.c"
         "cli/serial_cli.c"
         "proxy/http_proxy.c"
         "cron/cron_service.c"
@@ -29,5 +42,5 @@ idf_component_register(
     REQUIRES
         nvs_flash esp_wifi esp_netif esp_http_client esp_http_server
         esp_https_ota esp_event json spiffs console vfs app_update esp-tls
-        esp_timer esp_websocket_client esp_driver_gpio
+        esp_timer esp_websocket_client esp_driver_gpio esp_driver_i2s
 )

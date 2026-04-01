@@ -78,10 +78,42 @@ static void append_turn_context_prompt(char *prompt, size_t size, const mimi_msg
         "\n## Current Turn Context\n"
         "- source_channel: %s\n"
         "- source_chat_id: %s\n"
+        "- session_id: %s\n"
+        "- preferred_language: %s\n"
+        "- msg_type: %d\n"
         "- If using cron_add for Telegram in this turn, set channel='telegram' and chat_id to source_chat_id.\n"
         "- Never use chat_id 'cron' for Telegram messages.\n",
         msg->channel[0] ? msg->channel : "(unknown)",
-        msg->chat_id[0] ? msg->chat_id : "(empty)");
+        msg->chat_id[0] ? msg->chat_id : "(empty)",
+        msg->session_id[0] ? msg->session_id : "(none)",
+        msg->preferred_language[0] ? msg->preferred_language : "(default)",
+        (int)msg->msg_type);
+
+    if (n < 0 || (size_t)n >= (size - off)) {
+        prompt[size - 1] = '\0';
+    }
+}
+
+static void append_voice_behavior_prompt(char *prompt, size_t size, const mimi_msg_t *msg)
+{
+    if (!prompt || size == 0 || !msg || strcmp(msg->channel, MIMI_CHAN_VOICE) != 0) {
+        return;
+    }
+
+    size_t off = strnlen(prompt, size - 1);
+    if (off >= size - 1) {
+        return;
+    }
+
+    int n = snprintf(
+        prompt + off, size - off,
+        "\n## Voice Mode\n"
+        "You are responding for spoken playback on an ESP32-S3 voice assistant.\n"
+        "Keep replies concise, natural, and easy to speak aloud.\n"
+        "Prefer short sentences.\n"
+        "Avoid markdown, tables, and long bullet lists unless the user explicitly asks for them.\n"
+        "Prefer plain language and a conversational tone suitable for TTS.\n"
+        "Default to the preferred language hint when it is present, but still answer mixed-language input naturally.\n");
 
     if (n < 0 || (size_t)n >= (size - off)) {
         prompt[size - 1] = '\0';
@@ -195,6 +227,7 @@ static void agent_loop_task(void *arg)
         /* 1. Build system prompt */
         context_build_system_prompt(system_prompt, MIMI_CONTEXT_BUF_SIZE);
         append_turn_context_prompt(system_prompt, MIMI_CONTEXT_BUF_SIZE, &msg);
+        append_voice_behavior_prompt(system_prompt, MIMI_CONTEXT_BUF_SIZE, &msg);
         ESP_LOGI(TAG, "LLM turn context: channel=%s chat_id=%s", msg.channel, msg.chat_id);
 
         /* 2. Load session history into cJSON array */
@@ -218,7 +251,9 @@ static void agent_loop_task(void *arg)
         while (iteration < MIMI_AGENT_MAX_TOOL_ITER) {
             /* Send "working" indicator before each API call */
 #if MIMI_AGENT_SEND_WORKING_STATUS
-            if (!sent_working_status && strcmp(msg.channel, MIMI_CHAN_SYSTEM) != 0) {
+            if (!sent_working_status &&
+                strcmp(msg.channel, MIMI_CHAN_SYSTEM) != 0 &&
+                strcmp(msg.channel, MIMI_CHAN_VOICE) != 0) {
                 mimi_msg_t status = {0};
                 strncpy(status.channel, msg.channel, sizeof(status.channel) - 1);
                 strncpy(status.chat_id, msg.chat_id, sizeof(status.chat_id) - 1);
@@ -290,6 +325,13 @@ static void agent_loop_task(void *arg)
             mimi_msg_t out = {0};
             strncpy(out.channel, msg.channel, sizeof(out.channel) - 1);
             strncpy(out.chat_id, msg.chat_id, sizeof(out.chat_id) - 1);
+            strncpy(out.session_id, msg.session_id, sizeof(out.session_id) - 1);
+            strncpy(out.preferred_language, msg.preferred_language, sizeof(out.preferred_language) - 1);
+            strncpy(out.source_role, "assistant", sizeof(out.source_role) - 1);
+            out.msg_type = (strcmp(msg.channel, MIMI_CHAN_VOICE) == 0)
+                ? MIMI_MSG_TYPE_VOICE_TEXT_FINAL
+                : MIMI_MSG_TYPE_TEXT;
+            out.flags = MIMI_MSG_FLAG_FINAL | MIMI_MSG_FLAG_FROM_AGENT;
             out.content = final_text;  /* transfer ownership */
             ESP_LOGI(TAG, "Queue final response to %s:%s (%d bytes)",
                      out.channel, out.chat_id, (int)strlen(final_text));
@@ -305,6 +347,13 @@ static void agent_loop_task(void *arg)
             mimi_msg_t out = {0};
             strncpy(out.channel, msg.channel, sizeof(out.channel) - 1);
             strncpy(out.chat_id, msg.chat_id, sizeof(out.chat_id) - 1);
+            strncpy(out.session_id, msg.session_id, sizeof(out.session_id) - 1);
+            strncpy(out.preferred_language, msg.preferred_language, sizeof(out.preferred_language) - 1);
+            strncpy(out.source_role, "assistant", sizeof(out.source_role) - 1);
+            out.msg_type = (strcmp(msg.channel, MIMI_CHAN_VOICE) == 0)
+                ? MIMI_MSG_TYPE_VOICE_TEXT_FINAL
+                : MIMI_MSG_TYPE_TEXT;
+            out.flags = MIMI_MSG_FLAG_FINAL | MIMI_MSG_FLAG_FROM_AGENT;
             out.content = strdup("Sorry, I encountered an error.");
             if (out.content) {
                 if (message_bus_push_outbound(&out) != ESP_OK) {

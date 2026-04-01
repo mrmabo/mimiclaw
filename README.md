@@ -33,6 +33,17 @@ MimiClaw turns a tiny ESP32-S3 board into a personal AI assistant. Plug it into 
 
 You send a message on Telegram. The ESP32-S3 picks it up over WiFi, feeds it into an agent loop — the LLM thinks, calls tools, reads memory — and sends the reply back. Supports both **Anthropic (Claude)** and **OpenAI (GPT)** as providers, switchable at runtime. Everything runs on a single $5 chip with all your data stored locally on flash.
 
+## Voice Runtime
+
+MimicLaw now includes an ESP32-S3 voice runtime with:
+
+- local wake word detection through ESP-SR / WakeNet
+- local acknowledgement playback before the network path starts
+- an external WebSocket ASR/TTS gateway
+- reuse of the existing MimicLaw agent loop for reasoning, tools, and memory
+
+Architecture, configuration, wake word routing, and build notes are documented in [`docs/VOICE_RUNTIME.md`](docs/VOICE_RUNTIME.md).
+
 ## Quick Start
 
 ### What You Need
