@@ -46,6 +46,9 @@
 #ifndef MIMI_SECRET_TAVILY_KEY
 #define MIMI_SECRET_TAVILY_KEY      ""
 #endif
+#ifndef MIMI_SECRET_TAVILY_KEYS
+#define MIMI_SECRET_TAVILY_KEYS     ""
+#endif
 
 /* WiFi */
 #define MIMI_WIFI_MAX_RETRY          10
@@ -133,7 +136,7 @@
 #define MIMI_WS_MAX_CLIENTS          4
 
 /* Serial CLI */
-#define MIMI_CLI_STACK               (4 * 1024)
+#define MIMI_CLI_STACK               (8 * 1024)
 #define MIMI_CLI_PRIO                3
 #define MIMI_CLI_CORE                0
 

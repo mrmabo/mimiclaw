@@ -353,9 +353,15 @@ static int cmd_tavily_check_credits(int argc, char **argv)
 {
     (void)argc;
     (void)argv;
-    char output[1024] = {0};
-    esp_err_t err = tool_tavily_check_credits_execute("{\"force\":true}", output, sizeof(output));
+    char *output = calloc(1, 1024);
+    if (!output) {
+        printf("Out of memory.\n");
+        return 1;
+    }
+
+    esp_err_t err = tool_tavily_check_credits_execute("{\"force\":true}", output, 1024);
     printf("%s\n", output[0] ? output : "No output.");
+    free(output);
     return (err == ESP_OK) ? 0 : 1;
 }
 
@@ -880,6 +886,7 @@ esp_err_t serial_cli_init(void)
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     repl_config.prompt = "mimi> ";
     repl_config.max_cmdline_length = 256;
+    repl_config.task_stack_size = MIMI_CLI_STACK;
 
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();

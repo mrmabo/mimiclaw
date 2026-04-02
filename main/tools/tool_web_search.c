@@ -17,6 +17,10 @@
 #include "esp_log.h"
 #include "nvs.h"
 
+#ifndef MIMI_SECRET_TAVILY_KEYS
+#define MIMI_SECRET_TAVILY_KEYS ""
+#endif
+
 static const char *TAG = "web_search";
 
 typedef enum {
