@@ -27,3 +27,13 @@ esp_err_t tool_web_search_set_key(const char *api_key);
  * Save Tavily API key to NVS.
  */
 esp_err_t tool_web_search_set_tavily_key(const char *api_key);
+
+/**
+ * Save a comma-separated Tavily API key list to NVS.
+ */
+esp_err_t tool_web_search_set_tavily_keys(const char *api_keys_csv);
+
+/**
+ * Check configured Tavily key credits and rotate to another key if needed.
+ */
+esp_err_t tool_tavily_check_credits_execute(const char *input_json, char *output, size_t output_size);

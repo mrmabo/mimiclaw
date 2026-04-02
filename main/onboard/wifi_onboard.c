@@ -228,6 +228,7 @@ static esp_err_t http_get_config(httpd_req_t *req)
     json_add_effective_config(root, "proxy_type", MIMI_NVS_PROXY, MIMI_NVS_KEY_PROXY_TYPE, MIMI_SECRET_PROXY_TYPE);
     json_add_effective_config(root, "search_key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_API_KEY, MIMI_SECRET_SEARCH_KEY);
     json_add_effective_config(root, "tavily_key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_TAVILY_KEY, MIMI_SECRET_TAVILY_KEY);
+    json_add_effective_config(root, "tavily_keys", MIMI_NVS_SEARCH, MIMI_NVS_KEY_TAVILY_KEYS, MIMI_SECRET_TAVILY_KEYS);
 
     char *json = cJSON_PrintUnformatted(root);
     cJSON_Delete(root);
@@ -359,6 +360,16 @@ static esp_err_t http_post_save(httpd_req_t *req)
     /* Search */
     nvs_sync_field(root, "search_key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_API_KEY);
     nvs_sync_field(root, "tavily_key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_TAVILY_KEY);
+    nvs_sync_field(root, "tavily_keys", MIMI_NVS_SEARCH, MIMI_NVS_KEY_TAVILY_KEYS);
+    if (cJSON_GetObjectItem(root, "tavily_key") || cJSON_GetObjectItem(root, "tavily_keys")) {
+        nvs_handle_t nvs;
+        if (nvs_open(MIMI_NVS_SEARCH, NVS_READWRITE, &nvs) == ESP_OK) {
+            nvs_set_u8(nvs, MIMI_NVS_KEY_TAVILY_ACTIVE, 0);
+            nvs_set_u32(nvs, MIMI_NVS_KEY_TAVILY_CHECK_TS, 0);
+            nvs_commit(nvs);
+            nvs_close(nvs);
+        }
+    }
 
     cJSON_Delete(root);
 

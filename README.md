@@ -131,6 +131,7 @@ Edit `main/mimi_secrets.h`:
 #define MIMI_SECRET_MODEL_PROVIDER  "anthropic"     // "anthropic" or "openai"
 #define MIMI_SECRET_SEARCH_KEY      ""              // optional: Brave Search API key
 #define MIMI_SECRET_TAVILY_KEY      ""              // optional: Tavily API key (preferred)
+#define MIMI_SECRET_TAVILY_KEYS     ""              // optional: comma-separated Tavily keys for auto-rotation
 #define MIMI_SECRET_PROXY_HOST      ""              // optional: e.g. "10.0.0.1"
 #define MIMI_SECRET_PROXY_PORT      ""              // optional: e.g. "7897"
 ```
@@ -175,6 +176,8 @@ mimi> set_proxy 127.0.0.1 7897  # set HTTP proxy
 mimi> clear_proxy                  # remove proxy
 mimi> set_search_key BSA...        # set Brave Search API key
 mimi> set_tavily_key tvly-...      # set Tavily API key (preferred)
+mimi> set_tavily_keys tvly-a,tvly-b  # set multiple Tavily keys for auto-rotation
+mimi> tavily_check_credits         # check Tavily usage now and rotate active key if needed
 mimi> config_show                  # show all config (masked)
 mimi> config_reset                 # clear NVS, revert to build-time defaults
 ```

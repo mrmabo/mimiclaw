@@ -117,6 +117,10 @@
 #define MIMI_CRON_CHECK_INTERVAL_MS  (60 * 1000)
 #define MIMI_HEARTBEAT_FILE          MIMI_SPIFFS_BASE "/HEARTBEAT.md"
 #define MIMI_HEARTBEAT_INTERVAL_MS   (30 * 60 * 1000)
+#define MIMI_TAVILY_KEY_SLOTS        8
+#define MIMI_TAVILY_KEY_MAX_LEN      128
+#define MIMI_TAVILY_KEYS_BLOB_MAX    1024
+#define MIMI_TAVILY_CHECK_INTERVAL_S (24 * 60 * 60)
 
 /* GPIO */
 #define MIMI_GPIO_CONFIG_SECTION     1   /* enable GPIO tools */
@@ -149,6 +153,9 @@
 #define MIMI_NVS_KEY_FEISHU_APP_SECRET "app_secret"
 #define MIMI_NVS_KEY_API_KEY         "api_key"
 #define MIMI_NVS_KEY_TAVILY_KEY      "tavily_key"
+#define MIMI_NVS_KEY_TAVILY_KEYS     "tavily_keys"
+#define MIMI_NVS_KEY_TAVILY_ACTIVE   "tavily_idx"
+#define MIMI_NVS_KEY_TAVILY_CHECK_TS "tavily_chk"
 #define MIMI_NVS_KEY_MODEL           "model"
 #define MIMI_NVS_KEY_PROVIDER        "provider"
 #define MIMI_NVS_KEY_PROXY_HOST      "host"

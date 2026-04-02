@@ -55,6 +55,12 @@ cp main/mimi_secrets.h.example main/mimi_secrets.h
 #define MIMI_SECRET_TAVILY_KEY      "tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
+If you want automatic failover across several Tavily accounts or projects, you can also set a comma-separated key pool:
+
+```c
+#define MIMI_SECRET_TAVILY_KEYS     "tvly-key-1,tvly-key-2,tvly-key-3"
+```
+
 3. Rebuild the firmware:
 
 ```bash
@@ -75,6 +81,18 @@ Connect to the UART (COM) port and run:
 mimi> set_tavily_key tvly-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
+To configure multiple keys for automatic rotation:
+
+```
+mimi> set_tavily_keys tvly-key-1,tvly-key-2,tvly-key-3
+```
+
+To force a credit check and rotate the active key immediately:
+
+```
+mimi> tavily_check_credits
+```
+
 This saves the key to NVS flash and takes effect immediately — no rebuild needed. Runtime values override build-time defaults.
 
 ### Verify Configuration
@@ -85,14 +103,14 @@ Check that the key is set:
 mimi> config_show
 ```
 
-You should see `tavily_key: tvly-****` (masked) in the output.
+You should see `tavily_key: tvly-****` for single-key mode, or `tavily_keys: N keys` when a rotation pool is configured.
 
 ## How It Works in MimiClaw
 
 When the AI agent needs to search the web, it calls the `web_search` tool. MimiClaw selects the search provider with this priority:
 
 ```
-1. Tavily (if MIMI_SECRET_TAVILY_KEY is set)  <-- preferred
+1. Tavily (if MIMI_SECRET_TAVILY_KEY or MIMI_SECRET_TAVILY_KEYS is set)  <-- preferred
 2. Brave Search (if MIMI_SECRET_SEARCH_KEY is set)
 3. No search available (tool returns error)
 ```
@@ -117,6 +135,8 @@ Tavily returns structured results
 Agent incorporates results into response
 ```
 
+When multiple Tavily keys are configured, MimiClaw also calls Tavily's `GET /usage` endpoint to read `key.usage`, `key.limit`, `account.plan_usage`, and `account.plan_limit`. It rotates to the next configured key when the active one is exhausted. The firmware performs this check lazily at most once every 24 hours, and it also retries rotation immediately when a Tavily search request fails.
+
 Each `basic` search costs **1 API credit**. With the free plan's 1,000 credits/month, that's about 33 searches per day.
 
 ## API Details
@@ -128,6 +148,14 @@ MimiClaw uses the Tavily Search API endpoint:
 | **Endpoint** | `POST https://api.tavily.com/search` |
 | **Auth** | `Authorization: Bearer <API_KEY>` |
 | **Content-Type** | `application/json` |
+
+MimiClaw also uses Tavily's Usage API to inspect credits during rotation checks:
+
+| Parameter | Value |
+|-----------|-------|
+| **Endpoint** | `GET https://api.tavily.com/usage` |
+| **Auth** | `Authorization: Bearer <API_KEY>` |
+| **Purpose** | Read per-key and per-account usage before rotating keys |
 
 ### Request Body (as sent by MimiClaw)
 

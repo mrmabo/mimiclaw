@@ -16,7 +16,7 @@ static const char ONBOARD_HTML[] =
 ".card.collapsed .card-body{display:none}"
 ".card-body{padding:0 16px 16px}"
 "label{display:block;margin:10px 0 4px;font-size:.85em;color:#555}"
-"input,select{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:.95em;outline:none}"
+"input,select,textarea{width:100%;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-size:.95em;outline:none}"
 "input:focus,select:focus{border-color:#1a73e8}"
 ".btn{display:block;width:100%;padding:12px;border:none;border-radius:8px;font-size:1em;font-weight:600;cursor:pointer;margin:8px 0}"
 ".btn-scan{background:#e8f0fe;color:#1a73e8}"
@@ -104,6 +104,8 @@ static const char ONBOARD_HTML[] =
 "<input id='search_key' type='password' placeholder='BSA...'>"
 "<label>Tavily API Key</label>"
 "<input id='tavily_key' type='password' placeholder='tvly-...'>"
+"<label>Tavily API Keys (comma-separated)</label>"
+"<textarea id='tavily_keys' rows='3' placeholder='tvly-key-1,tvly-key-2'></textarea>"
 "</div></div>"
 
 "<button class='btn btn-save' onclick='save()'>Save &amp; Restart</button>"
@@ -135,7 +137,7 @@ static const char ONBOARD_HTML[] =
 
 "function save(){"
 "var fields=['ssid','password','api_key','model','provider','tg_token',"
-"'feishu_app_id','feishu_app_secret','proxy_host','proxy_port','proxy_type','search_key','tavily_key'];"
+"'feishu_app_id','feishu_app_secret','proxy_host','proxy_port','proxy_type','search_key','tavily_key','tavily_keys'];"
 "var data={};"
 "fields.forEach(f=>{data[f]=document.getElementById(f).value.trim()});"
 "document.getElementById('status').style.display='block';"

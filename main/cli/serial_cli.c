@@ -320,6 +320,11 @@ static struct {
     struct arg_end *end;
 } tavily_key_args;
 
+static struct {
+    struct arg_str *keys;
+    struct arg_end *end;
+} tavily_keys_args;
+
 static int cmd_set_tavily_key(int argc, char **argv)
 {
     int nerrors = arg_parse(argc, argv, (void **)&tavily_key_args);
@@ -330,6 +335,28 @@ static int cmd_set_tavily_key(int argc, char **argv)
     tool_web_search_set_tavily_key(tavily_key_args.key->sval[0]);
     printf("Tavily API key saved.\n");
     return 0;
+}
+
+static int cmd_set_tavily_keys(int argc, char **argv)
+{
+    int nerrors = arg_parse(argc, argv, (void **)&tavily_keys_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, tavily_keys_args.end, argv[0]);
+        return 1;
+    }
+    tool_web_search_set_tavily_keys(tavily_keys_args.keys->sval[0]);
+    printf("Tavily API key list saved.\n");
+    return 0;
+}
+
+static int cmd_tavily_check_credits(int argc, char **argv)
+{
+    (void)argc;
+    (void)argv;
+    char output[1024] = {0};
+    esp_err_t err = tool_tavily_check_credits_execute("{\"force\":true}", output, sizeof(output));
+    printf("%s\n", output[0] ? output : "No output.");
+    return (err == ESP_OK) ? 0 : 1;
 }
 
 /* --- wifi_scan command --- */
@@ -566,6 +593,64 @@ static void print_config_u16(const char *label, const char *ns, const char *key,
     printf("  %-14s: %s  [%s]\n", label, display, source);
 }
 
+static int count_csv_items(const char *value)
+{
+    int count = 0;
+    bool in_item = false;
+
+    if (!value) {
+        return 0;
+    }
+
+    for (const char *p = value; *p; p++) {
+        if (*p == ',' || *p == ';' || *p == '\r' || *p == '\n') {
+            if (in_item) {
+                count++;
+                in_item = false;
+            }
+        } else if (!isspace((unsigned char)*p)) {
+            in_item = true;
+        }
+    }
+
+    if (in_item) {
+        count++;
+    }
+    return count;
+}
+
+static void print_multi_config_summary(const char *label, const char *ns, const char *key,
+                                       const char *build_val)
+{
+    char nvs_val[MIMI_TAVILY_KEYS_BLOB_MAX] = {0};
+    const char *source = "not set";
+    const char *display = "(empty)";
+    int count = 0;
+
+    nvs_handle_t nvs;
+    if (nvs_open(ns, NVS_READONLY, &nvs) == ESP_OK) {
+        size_t len = sizeof(nvs_val);
+        if (nvs_get_str(nvs, key, nvs_val, &len) == ESP_OK && nvs_val[0]) {
+            source = "NVS";
+            count = count_csv_items(nvs_val);
+        }
+        nvs_close(nvs);
+    }
+
+    if (strcmp(source, "not set") == 0 && build_val[0] != '\0') {
+        source = "build";
+        count = count_csv_items(build_val);
+    }
+
+    if (count > 0) {
+        static char summary[32];
+        snprintf(summary, sizeof(summary), "%d keys", count);
+        display = summary;
+    }
+
+    printf("  %-14s: %s  [%s]\n", label, display, source);
+}
+
 static int cmd_config_show(int argc, char **argv)
 {
     printf("=== Current Configuration ===\n");
@@ -579,6 +664,7 @@ static int cmd_config_show(int argc, char **argv)
     print_config_u16("Proxy Port", MIMI_NVS_PROXY, MIMI_NVS_KEY_PROXY_PORT, MIMI_SECRET_PROXY_PORT);
     print_config("Search Key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_API_KEY,  MIMI_SECRET_SEARCH_KEY, true);
     print_config("Tavily Key", MIMI_NVS_SEARCH, MIMI_NVS_KEY_TAVILY_KEY, MIMI_SECRET_TAVILY_KEY, true);
+    print_multi_config_summary("Tavily Keys", MIMI_NVS_SEARCH, MIMI_NVS_KEY_TAVILY_KEYS, MIMI_SECRET_TAVILY_KEYS);
     printf("=============================\n");
     return 0;
 }
@@ -1006,6 +1092,25 @@ esp_err_t serial_cli_init(void)
         .argtable = &tavily_key_args,
     };
     esp_console_cmd_register(&tavily_key_cmd);
+
+    /* set_tavily_keys */
+    tavily_keys_args.keys = arg_str1(NULL, NULL, "<keys>", "Comma-separated Tavily API keys");
+    tavily_keys_args.end = arg_end(1);
+    esp_console_cmd_t tavily_keys_cmd = {
+        .command = "set_tavily_keys",
+        .help = "Set multiple Tavily API keys for automatic rotation",
+        .func = &cmd_set_tavily_keys,
+        .argtable = &tavily_keys_args,
+    };
+    esp_console_cmd_register(&tavily_keys_cmd);
+
+    /* tavily_check_credits */
+    esp_console_cmd_t tavily_check_cmd = {
+        .command = "tavily_check_credits",
+        .help = "Check Tavily credits now and rotate the active key if needed",
+        .func = &cmd_tavily_check_credits,
+    };
+    esp_console_cmd_register(&tavily_check_cmd);
 
     /* set_proxy */
     proxy_args.host = arg_str1(NULL, NULL, "<host>", "Proxy host/IP");

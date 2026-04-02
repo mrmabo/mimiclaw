@@ -70,6 +70,17 @@ esp_err_t tool_registry_init(void)
     };
     register_tool(&ws);
 
+    mimi_tool_t tc = {
+        .name = "tavily_check_credits",
+        .description = "Check configured Tavily API key credits and rotate to the next key if the active one is exhausted.",
+        .input_schema_json =
+            "{\"type\":\"object\","
+            "\"properties\":{\"force\":{\"type\":\"boolean\",\"description\":\"Force a fresh usage check even if the last check was recent\"}},"
+            "\"required\":[]}",
+        .execute = tool_tavily_check_credits_execute,
+    };
+    register_tool(&tc);
+
     /* Register get_current_time */
     mimi_tool_t gt = {
         .name = "get_current_time",
