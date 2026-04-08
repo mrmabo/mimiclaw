@@ -1,6 +1,7 @@
 #include "llm_proxy.h"
 #include "mimi_config.h"
 #include "proxy/http_proxy.h"
+#include "utils/utf8_sanitize.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -601,6 +602,12 @@ esp_err_t llm_chat_tools(const char *system_prompt,
                 cJSON_AddItemToObject(body, "tools", tools);
             }
         }
+    }
+
+    size_t replaced = utf8_sanitize_cjson_strings(body);
+    if (replaced > 0) {
+        ESP_LOGW(TAG, "Sanitized %u invalid UTF-8 byte(s) in LLM request body",
+                 (unsigned)replaced);
     }
 
     char *post_data = cJSON_PrintUnformatted(body);

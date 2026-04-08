@@ -5,6 +5,7 @@
 #include "llm/llm_proxy.h"
 #include "memory/session_mgr.h"
 #include "tools/tool_registry.h"
+#include "utils/utf8_sanitize.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -189,6 +190,19 @@ static void agent_loop_task(void *arg)
         mimi_msg_t msg;
         esp_err_t err = message_bus_pop_inbound(&msg, UINT32_MAX);
         if (err != ESP_OK) continue;
+
+        if (msg.content) {
+            size_t replaced = 0;
+            char *sanitized = utf8_sanitize_dup(msg.content, &replaced);
+            if (sanitized) {
+                free(msg.content);
+                msg.content = sanitized;
+                if (replaced > 0) {
+                    ESP_LOGW(TAG, "Sanitized %u invalid UTF-8 byte(s) in inbound message",
+                             (unsigned)replaced);
+                }
+            }
+        }
 
         ESP_LOGI(TAG, "Processing message from %s:%s", msg.channel, msg.chat_id);
 

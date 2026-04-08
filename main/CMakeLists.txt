@@ -2,6 +2,7 @@ idf_component_register(
     SRCS
         "mimi.c"
         "bus/message_bus.c"
+        "utils/utf8_sanitize.c"
         "wifi/wifi_manager.c"
         "channels/telegram/telegram_bot.c"
         "channels/feishu/feishu_bot.c"

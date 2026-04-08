@@ -8,6 +8,7 @@
 #include <time.h>
 #include "esp_log.h"
 #include "cJSON.h"
+#include "utils/utf8_sanitize.h"
 
 static const char *TAG = "session";
 
@@ -26,16 +27,20 @@ esp_err_t session_append(const char *chat_id, const char *role, const char *cont
 {
     char path[64];
     session_path(chat_id, path, sizeof(path));
+    size_t replaced = 0;
+    char *sanitized = utf8_sanitize_dup(content ? content : "", &replaced);
+    const char *stored_content = sanitized ? sanitized : (content ? content : "");
 
     FILE *f = fopen(path, "a");
     if (!f) {
         ESP_LOGE(TAG, "Cannot open session file %s", path);
+        free(sanitized);
         return ESP_FAIL;
     }
 
     cJSON *obj = cJSON_CreateObject();
     cJSON_AddStringToObject(obj, "role", role);
-    cJSON_AddStringToObject(obj, "content", content);
+    cJSON_AddStringToObject(obj, "content", stored_content);
     cJSON_AddNumberToObject(obj, "ts", (double)time(NULL));
 
     char *line = cJSON_PrintUnformatted(obj);
@@ -47,6 +52,11 @@ esp_err_t session_append(const char *chat_id, const char *role, const char *cont
     }
 
     fclose(f);
+    free(sanitized);
+    if (replaced > 0) {
+        ESP_LOGW(TAG, "Sanitized %u invalid UTF-8 byte(s) before session append",
+                 (unsigned)replaced);
+    }
     return ESP_OK;
 }
 
@@ -98,8 +108,17 @@ esp_err_t session_get_history_json(const char *chat_id, char *buf, size_t size, 
         cJSON *role = cJSON_GetObjectItem(src, "role");
         cJSON *content = cJSON_GetObjectItem(src, "content");
         if (role && content) {
+            size_t replaced = 0;
+            char *sanitized = utf8_sanitize_dup(content->valuestring ? content->valuestring : "",
+                                                &replaced);
             cJSON_AddStringToObject(entry, "role", role->valuestring);
-            cJSON_AddStringToObject(entry, "content", content->valuestring);
+            cJSON_AddStringToObject(entry, "content",
+                                    sanitized ? sanitized : (content->valuestring ? content->valuestring : ""));
+            if (replaced > 0) {
+                ESP_LOGW(TAG, "Sanitized %u invalid UTF-8 byte(s) while loading session history",
+                         (unsigned)replaced);
+            }
+            free(sanitized);
         }
         cJSON_AddItemToArray(arr, entry);
     }
